@@ -5,12 +5,9 @@ import os
 #
 # print os.uname()
 #
-# import psutil
-#
+import psutil
 # print psutil.cpu_stats()
-#
 # print psutil.cpu_count()
-#
 # print psutil.cpu_freq()
 #
 # # print psutil.cpu_freq().current
@@ -31,13 +28,15 @@ import os
 #
 import paramiko
 from Crypto.Cipher import AES
-import xml.etree.ElementTree as ET
 
-tree = ET.parse("clients.xml")
-root= tree.getroot()
-len =  len(root)
-for x in root.findall("client"):
-   print x.get("username") + x.get("password")
+def main():
+   import psutil
+   import json
+   d = psutil.cpu_stats()
+   print json.dumps(d)
+
+if __name__ =='__main__':
+   main()
 
 
 
