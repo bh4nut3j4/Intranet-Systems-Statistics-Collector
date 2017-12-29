@@ -5,7 +5,7 @@ import os
 #
 # print os.uname()
 #
-import psutil
+#import psutil
 # print psutil.cpu_stats()
 # print psutil.cpu_count()
 # print psutil.cpu_freq()
@@ -26,16 +26,33 @@ import psutil
 #
 # print psutil.pids()
 #
-import paramiko
-from Crypto.Cipher import AES
+# import paramiko
+# from Crypto.Cipher import AES
+# import pip
+# import imp
+
+def install_and_import(module):
+    print
+
+
 
 def main():
-   import psutil
+   import pip
    import json
-   d = psutil.cpu_stats()
-   print json.dumps(d)
+   # d = psutil.cpu_stats()
+   # print json.dumps(d)
+   print "inside"
+   try:
+      import module
+   except:
+      pip.main(['install', 'psutil'])
+      import psutil
+      d = psutil.cpu_stats()
+      print json.dumps(d)
+
 
 if __name__ =='__main__':
+   install_and_import('psutil')
    main()
 
 

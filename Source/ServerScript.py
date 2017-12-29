@@ -2,8 +2,6 @@
 #Server Side Script
 
 import os
-import re
-import json
 import logging
 import sys
 
@@ -54,7 +52,6 @@ def connect(ip,port,username,password):
         print format(sys.exc_info()[-1].tb_lineno), type(e).__name__, e
 
 
-
 def main():
     global root
     import xml.etree.ElementTree as ET
@@ -73,9 +70,8 @@ def main():
         username = x.get("username")
         password = x.get("password")
         port = x.get("port")
-
         connect(ip,port,username,password)
-        # print ip + username + password + port
+
 
 if __name__=='__main__':
     main()
