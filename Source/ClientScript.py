@@ -1,10 +1,8 @@
 #!/usr/bin/python2.7
 # Client Side Script
 import os
-import pip
 import json
 import sys
-import re
 from time import time
 
 
@@ -22,7 +20,6 @@ def install_and_import(packageName, importName=None, submoduleName=None):
     return
 
 install_and_import('psutil')
-install_and_import('pypiwin32')
 
 import Crypto.Cipher.AES as AES
 
@@ -75,8 +72,8 @@ def main():
         CPU["cpu_usage"] = psutil.cpu_percent()
         CPU["cpu_count"] = psutil.cpu_count()
         CPU["boot_time"] = time() - psutil.boot_time()
-        CPU["min_frequency"] = psutil.cpu_freq().min
-        CPU["max_frequency"] = psutil.cpu_freq().max
+        # CPU["min_frequency"] = psutil.cpu_freq().min
+        # CPU["max_frequency"] = psutil.cpu_freq().max
         CPU["ctx_switches"] = psutil.cpu_stats().ctx_switches
         CPU["interrupts"] = psutil.cpu_stats().interrupts
         CPU["soft_interrupts"] = psutil.cpu_stats().soft_interrupts
@@ -90,31 +87,31 @@ def main():
     except Exception as e:
         print e.message
 
-        if os.name == 'nt' or 'NT':
-            import win32evtlog
-            host = 'localhost'
-            type_of_log = 'Security'
-            hand = win32evtlog.OpenEventLog(host, type_of_log)
-            readbck = win32evtlog.EVENTLOG_BACKWARDS_READ
-            readsqntl = win32evtlog.EVENTLOG_SEQUENTIAL_READ
-            flags = readbck | readsqntl
-            total = win32evtlog.GetNumberOfEventLogRecords(hand)
-            events = win32evtlog.ReadEventLog(hand, flags, 0)
-            if events:
-                formatedEvents = ''
-                for event in events:
-                    formatedEvents += 'Event Category: ' + str(event.EventCategory)
-                    formatedEvents += '\nTime Generated: ' + str(event.TimeGenerated)
-                    formatedEvents += '\nSource Name: ' + event.SourceName
-                    formatedEvents += '\nEvent ID: ' + str(event.EventID)
-                    formatedEvents += '\nEvent Type:' + str(event.EventType) + '\n'
-                # Adds Logs to the result dictionary
-                result["logs"] = str(formatedEvents)
+    if os.name == 'nt':
+        import win32evtlog
+        host = 'localhost'
+        type_of_log = 'Security'
+        hand = win32evtlog.OpenEventLog(host, type_of_log)
+        readbck = win32evtlog.EVENTLOG_BACKWARDS_READ
+        readsqntl = win32evtlog.EVENTLOG_SEQUENTIAL_READ
+        flags = readbck | readsqntl
+        total = win32evtlog.GetNumberOfEventLogRecords(hand)
+        events = win32evtlog.ReadEventLog(hand, flags, 0)
+        if events:
+            formatedEvents = ''
+            for event in events:
+                formatedEvents += 'Event Category: ' + str(event.EventCategory)
+                formatedEvents += '\nTime Generated: ' + str(event.TimeGenerated)
+                formatedEvents += '\nSource Name: ' + event.SourceName
+                formatedEvents += '\nEvent ID: ' + str(event.EventID)
+                formatedEvents += '\nEvent Type:' + str(event.EventType) + '\n'
+            # Adds Logs to the result dictionary
+            result["logs"] = str(formatedEvents)
 
     json_result = json.dumps(result)
     encrypted_data = encrypt_jsondata(json_result)
     print encrypted_data
-    # print CPU
+
 
 if __name__ == '__main__':
     main()

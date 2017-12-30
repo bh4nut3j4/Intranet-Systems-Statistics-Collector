@@ -37,7 +37,7 @@ def send_mail(message, current, limit, email):
     msg = MIMEMultipart()
     msg['From'] = sender
     msg['To'] = email
-    msg['Subject'] = 'Email from Machine Statistics Collection System'
+    msg['Subject'] = 'Resource Level Limit Alert'
     message = message + "\nCurrent:" + current + "\nLimit:" + limit
     msg.attach(MIMEText(message))
 
@@ -55,7 +55,6 @@ def send_mail(message, current, limit, email):
 
 
 def connect(ip,port,username,password):
-    print ip + username + password + port
     global temp_dir, command
     import paramiko
     windows = False
@@ -104,6 +103,7 @@ def connect(ip,port,username,password):
             print "Failed to copy ClientScript to the Client Computer with Ip: "+ip
             print e.message
 
+
     except Exception, e:
         print "Failed to connect to IP: "+ip
         print e.message
@@ -132,71 +132,73 @@ def connect(ip,port,username,password):
 def insert_into_db(data,time,ip):
     conn = sqlite3.connect('NetworkData.db')
     print "Opened database successfully."
+    try:
+        #  Enter system statistics into the database
+        if len(conn.execute("select id from systemdetails where ip_address = '" + ip + "';").fetchall()) == 0:
+            conn.execute("INSERT INTO systemdetails (ip_address, platform, date_entry) \
+                                  VALUES ('" + ip + "', '" + data["Platform"] + "', '" + time + "');")
 
-    #  Enter system statistics into the database
-    if len(conn.execute("select id from systemdetails where ip_address = '" + ip + "';").fetchall()) == 0:
-        conn.execute("INSERT INTO systemdetails (ip_address, platform, date_entry) \
-                              VALUES ('" + ip + "', '" + data["Platform"] + "', '" + time + "');")
+        for each in data["Users"]:
+            conn.execute(("INSERT INTO systemusers (name, terminal, host, started, date_entry, ip_id) \
+                                  VALUES ('" + data["Users"][each]["name"] + "', '" + data["Users"][each][
+                "terminal"] + "', '" + data["Users"][each]["host"] + "', '" + data["Users"][each][
+                              "started"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));"))
 
-    for each in data["Users"]:
-        conn.execute(("INSERT INTO systemusers (name, terminal, host, started, date_entry, ip_id) \
-                              VALUES ('" + data["Users"][each]["name"] + "', '" + data["Users"][each][
-            "terminal"] + "', '" + data["Users"][each]["host"] + "', '" + data["Users"][each][
-                          "started"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));"))
+        for each in data["DiskPartitions"]:
+            conn.execute("INSERT INTO diskpartitions (fstype, device, mountpoint, opts, date_entry, ip_id) \
+                                  VALUES ('" + data["DiskPartitions"][each]["fstype"] + "', '" +
+                         data["DiskPartitions"][each]["device"] + "', '" + data["DiskPartitions"][each][
+                             "mountpoint"] + "', '" + data["DiskPartitions"][each][
+                             "opts"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
 
-    for each in data["DiskPartitions"]:
-        conn.execute("INSERT INTO diskpartitions (fstype, device, mountpoint, opts, date_entry, ip_id) \
-                              VALUES ('" + data["DiskPartitions"][each]["fstype"] + "', '" +
-                     data["DiskPartitions"][each]["device"] + "', '" + data["DiskPartitions"][each][
-                         "mountpoint"] + "', '" + data["DiskPartitions"][each][
-                         "opts"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        conn.execute("INSERT INTO swap (used, percent, free, sin, sout, total, date_entry, ip_id) \
+                              VALUES ('" + data["Swap"]["used"] + "', '" + data["Swap"]["percent"] + "', '" + data["Swap"][
+            "free"] + "', '" + data["Swap"]["sin"] + "', '" + data["Swap"]["sout"] + "', '" + data["Swap"][
+                         "total"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
 
-    conn.execute("INSERT INTO swap (used, percent, free, sin, sout, total, date_entry, ip_id) \
-                          VALUES ('" + data["Swap"]["used"] + "', '" + data["Swap"]["percent"] + "', '" + data["Swap"][
-        "free"] + "', '" + data["Swap"]["sin"] + "', '" + data["Swap"]["sout"] + "', '" + data["Swap"][
-                     "total"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        conn.execute("INSERT INTO memory (available, used, cached, percent, free, inactive, active, shared, total, buffers, date_entry, ip_id) \
+                              VALUES ('" + data["Memory"]["available"] + "', '" + data["Memory"]["used"] + "', '" +
+                     data["Memory"]["cached"] + "', '" + data["Memory"]["percent"] + "', '" + data["Memory"][
+                         "free"] + "', '" + data["Memory"]["inactive"] + "', '" + data["Memory"]["active"] + "', '" +
+                     data["Memory"]["shared"] + "', '" + data["Memory"]["total"] + "', '" + data["Memory"][
+                         "buffers"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
 
-    conn.execute("INSERT INTO memory (available, used, cached, percent, free, inactive, active, shared, total, buffers, date_entry, ip_id) \
-                          VALUES ('" + data["Memory"]["available"] + "', '" + data["Memory"]["used"] + "', '" +
-                 data["Memory"]["cached"] + "', '" + data["Memory"]["percent"] + "', '" + data["Memory"][
-                     "free"] + "', '" + data["Memory"]["inactive"] + "', '" + data["Memory"]["active"] + "', '" +
-                 data["Memory"]["shared"] + "', '" + data["Memory"]["total"] + "', '" + data["Memory"][
-                     "buffers"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        conn.execute("INSERT INTO diskusage (used, percent, free, total, date_entry, ip_id) \
+                              VALUES ('" + data["DiskUsage"]["used"] + "', '" + data["DiskUsage"]["percent"] + "', '" +
+                     data["DiskUsage"]["free"] + "', '" + data["DiskUsage"][
+                         "total"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
 
-    conn.execute("INSERT INTO diskusage (used, percent, free, total, date_entry, ip_id) \
-                          VALUES ('" + data["DiskUsage"]["used"] + "', '" + data["DiskUsage"]["percent"] + "', '" +
-                 data["DiskUsage"]["free"] + "', '" + data["DiskUsage"][
-                     "total"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        if "logs" in data.iterkeys():
+            conn.execute("INSERT INTO cpu (current_frequency, cpu_usage, soft_interrupts, min_frequency, cpu_count, max_frequency, boot_time, syscalls, interrupts, ctx_switches, logs, date_entry, ip_id) \
+                                  VALUES ('" + data["CPU"]["current_frequency"] + "', '" + data["CPU"][
+                "cpu_usage"] + "', '" + data["CPU"]["soft_interrupts"] + "', '" + data["CPU"]["min_frequency"] + "', '" +
+                         data["CPU"]["cpu_count"] + "', '" + data["CPU"]["max_frequency"] + "', '" + data["CPU"][
+                             "boot_time"] + "', '" + data["CPU"]["syscalls"] + "', '" + data["CPU"]["interrupts"] + "', '" +
+                         data["CPU"]["ctx_switches"] + "', '" + data[
+                             "logs"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        else:
+            conn.execute("INSERT INTO cpu (cpu_usage, soft_interrupts, cpu_count, boot_time, syscalls, interrupts, ctx_switches, date_entry, ip_id) \
+                                          VALUES ('"+ data["CPU"]["cpu_usage"] + "', '" + data["CPU"]["soft_interrupts"] + "', '" +
+                         data["CPU"]["cpu_count"] + "', '" + data["CPU"][
+                             "boot_time"] + "', '" + data["CPU"]["syscalls"] + "', '" + data["CPU"]["interrupts"] + "', '" +
+                         data["CPU"][
+                             "ctx_switches"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
 
-    if "logs" in data.iterkeys():
-        conn.execute("INSERT INTO cpu (current_frequency, cpu_usage, soft_interrupts, min_frequency, cpu_count, max_frequency, boot_time, syscalls, interrupts, ctx_switches, logs, date_entry, ip_id) \
-                              VALUES ('" + data["CPU"]["current_frequency"] + "', '" + data["CPU"][
-            "cpu_usage"] + "', '" + data["CPU"]["soft_interrupts"] + "', '" + data["CPU"]["min_frequency"] + "', '" +
-                     data["CPU"]["cpu_count"] + "', '" + data["CPU"]["max_frequency"] + "', '" + data["CPU"][
-                         "boot_time"] + "', '" + data["CPU"]["syscalls"] + "', '" + data["CPU"]["interrupts"] + "', '" +
-                     data["CPU"]["ctx_switches"] + "', '" + data[
-                         "logs"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
-    else:
-        conn.execute("INSERT INTO cpu (current_frequency, cpu_usage, soft_interrupts, min_frequency, cpu_count, max_frequency, boot_time, syscalls, interrupts, ctx_switches, date_entry, ip_id) \
-                              VALUES ('" + data["CPU"]["current_frequency"] + "', '" + data["CPU"][
-            "cpu_usage"] + "', '" + data["CPU"]["soft_interrupts"] + "', '" + data["CPU"]["min_frequency"] + "', '" +
-                     data["CPU"]["cpu_count"] + "', '" + data["CPU"]["max_frequency"] + "', '" + data["CPU"][
-                         "boot_time"] + "', '" + data["CPU"]["syscalls"] + "', '" + data["CPU"]["interrupts"] + "', '" +
-                     data["CPU"][
-                         "ctx_switches"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        conn.execute("INSERT INTO network (packets_sent, bytes_recv, packets_recv, dropin, dropout, bytes_sent, errout, errin, date_entry, ip_id) \
+                              VALUES ('" + data["Network"]["packets_sent"] + "', '" + data["Network"][
+            "bytes_recv"] + "', '" + data["Network"]["packets_recv"] + "', '" + data["Network"]["dropin"] + "', '" +
+                     data["Network"]["dropout"] + "', '" + data["Network"]["bytes_sent"] + "', '" + data["Network"][
+                         "errout"] + "', '" + data["Network"][
+                         "errin"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
 
-    conn.execute("INSERT INTO network (packets_sent, bytes_recv, packets_recv, dropin, dropout, bytes_sent, errout, errin, date_entry, ip_id) \
-                          VALUES ('" + data["Network"]["packets_sent"] + "', '" + data["Network"][
-        "bytes_recv"] + "', '" + data["Network"]["packets_recv"] + "', '" + data["Network"]["dropin"] + "', '" +
-                 data["Network"]["dropout"] + "', '" + data["Network"]["bytes_sent"] + "', '" + data["Network"][
-                     "errout"] + "', '" + data["Network"][
-                     "errin"] + "', '" + time + "', (select id from systemdetails where ip_address = '" + ip + "'));")
+        #  Make the changes requested
+        conn.commit()
+        print "Records created successfully."
+        #  close the connection to the database after creating the table
+        conn.close()
 
-    #  Make the changes requested
-    conn.commit()
-    print "Records created successfully."
-    #  close the connection to the database after creating the table
-    conn.close()
+    except Exception as e:
+        print e
 
 
 def main():
@@ -221,16 +223,17 @@ def main():
         data = connect(ip,port,username,password)
         time = str(datetime.now())
 
-        print x.findall("alert")[0].get("limit")
-
-        if data["Memory"]["percent"] > x.findall("alert")[0].get("limit"):
-            print "Memory Usage is more than the Limit! \n Sending an alert Email !"
-            send_mail("Memory Limit Exceeded", data["Memory"]["percent"],
-                      x.findall("alert")[0].get("limit"), mail)
-        if data["CPU"]["cpu_usage"] > x.findall("alert")[1].get("limit"):
-            print "CPU Usage is more than the Limit! \n Sending an alert Email !"
-            send_mail("CPU Limit Exceeded", data["CPU"]["cpu_usage"],  x.findall("alert")[0].get("limit"),
-                      mail)
+        try:
+            if data["Memory"]["percent"] > x.findall("alert")[0].get("limit"):
+                print "Memory Usage is more than the Limit! \n Sending an alert Email !"
+                send_mail("Memory Limit Exceeded", data["Memory"]["percent"],
+                          x.findall("alert")[0].get("limit"), mail)
+            if data["CPU"]["cpu_usage"] > x.findall("alert")[1].get("limit"):
+                print "CPU Usage is more than the Limit!Sending an alert Email !"
+                send_mail("CPU Limit Exceeded", data["CPU"]["cpu_usage"],  x.findall("alert")[0].get("limit"),
+                          mail)
+        except Exception as e:
+            print e.message
 
         insert_into_db(data,time,ip)
 
