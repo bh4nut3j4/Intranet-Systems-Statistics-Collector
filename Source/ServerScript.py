@@ -13,12 +13,13 @@ import sqlite3
 
 
 def decrypt_data(encrypted_data):
+    import Crypto.Cipher.AES as AES
     global decrypted_data
     key = "Key File For Encryption!"
     iv = "16bitivkeydata!!"
     try:
         cipher = AES.new(key, AES.MODE_CFB, iv)
-        decrypted_data = cipher.decrypt(encrypted_data[:-1])
+        decrypted_data = cipher.decrypt(encrypted_data)
         print "Decrypted Successfully !"
     except Exception as e:
         print e
@@ -94,7 +95,7 @@ def connect(ip,port,username,password):
                 stdin.close()
             ssh_response = stdout.read()
             decrypted_data = decrypt_data(ssh_response)
-            json_data = json.loads(decrypted_data)
+            json_data = json.loads(decrypted_data[:-1])
             secure_copy.close()
             ssh.close()
             return json_data

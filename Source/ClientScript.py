@@ -24,6 +24,7 @@ install_and_import('psutil')
 import Crypto.Cipher.AES as AES
 
 def encrypt_jsondata(data):
+    import Crypto.Cipher.AES as AES
     global encrypted_data
     key = "Key File For Encryption!"
     iv = "16bitivkeydata!!"

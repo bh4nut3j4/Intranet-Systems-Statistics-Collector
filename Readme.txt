@@ -21,3 +21,7 @@ Pre-requisites
 	i) One of the idea i have is to deploy the client script in the systems and configure it to execute every 5-10min
 	   time interval by adding the service as cron-jobs so that the script would run automatically without manual invocation.
 
+NOTE: 
+
+UNIT TEST'S ARE TO BE EXECUTED IN THE TERMINAL !
+
